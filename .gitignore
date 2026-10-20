@@ -1,0 +1,6 @@
+# customer data, never to GitHub
+input/
+Input/
+output/
+*.txt
+__pycache__/

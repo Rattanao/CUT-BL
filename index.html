@@ -1,0 +1,215 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CUT BL — PORTAL</title>
+<link rel="icon" href="assets/hal-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&family=Sarabun:wght@400;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5; --card: #ffffff; --text: #1f2937; --muted: #6b7280; --line: #d1d5db;
+  --navy: #2c4f7c; --navy-hover: #23426a; --navy-text: #2c4f7c; --on-navy: #ffffff; --input-bg: #ffffff;
+  --ok: #1a7f4b; --ok-soft: #e3f4ea;
+  --warn: #9a5b00; --warn-soft: #fdf1dc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --card: #1b212b; --text: #e6e9ef; --muted: #9aa3b2; --line: #343c4a;
+    --navy: #2c4f7c; --navy-hover: #3a6399; --navy-text: #9dbbe6; --on-navy: #ffffff; --input-bg: #141920;
+    --ok: #5fd39a; --ok-soft: #173326;
+    --warn: #f0b457; --warn-soft: #3a2d15;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --card: #1b212b; --text: #e6e9ef; --muted: #9aa3b2; --line: #343c4a;
+  --navy: #2c4f7c; --navy-hover: #3a6399; --navy-text: #9dbbe6; --on-navy: #ffffff; --input-bg: #141920;
+  --ok: #5fd39a; --ok-soft: #173326;
+  --warn: #f0b457; --warn-soft: #3a2d15;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.6 "Sarabun", system-ui, sans-serif; }
+header.bar { background: var(--navy); color: var(--on-navy); padding: 16px 28px;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px 24px; flex-wrap: wrap; }
+header.bar .by { font: 14px/1.5 "Sarabun", sans-serif; text-align: right; opacity: .9; }
+@media (max-width: 640px) { header.bar .by { text-align: left; } }
+header.bar h1 { font: 600 24px/1.4 "Kanit", sans-serif; margin: 0; }
+header.bar .brand { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-width: 0; }
+.logo-badge { background: #fff; border-radius: 6px; padding: 5px 10px; display: inline-flex; line-height: 0; flex: none; }
+.logo-badge img { height: 30px; width: auto; display: block; }
+main { max-width: 1200px; margin: 0 auto; padding: 24px 28px 60px; }
+@media (max-width: 640px) { header.bar, main { padding-left: 16px; padding-right: 16px; } }
+.card { background: var(--card); border-radius: 10px; padding: 24px 26px; margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 14px rgba(0,0,0,.04); }
+.form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 18px; align-items: end; }
+.form > * { min-width: 0; }
+@media (max-width: 1000px) { .form { grid-template-columns: 1fr; } .form button { width: 100%; } }
+@media (max-width: 640px) { .card { padding: 18px 16px; } }
+.fld > .lb { display: block; font: 500 17px/1.4 "Kanit", sans-serif; margin-bottom: 10px; }
+.fld input[type=file] { font: 14px "Sarabun", sans-serif; color: var(--muted); max-width: 100%; }
+.fld input[type=file]::file-selector-button { font: 14px "Sarabun", sans-serif; padding: 4px 8px; margin-right: 8px;
+  border: 1px solid #9ca3af; border-radius: 2px; background: #efefef; color: #111; cursor: pointer; }
+.fld .fn { display: block; font-size: 12.5px; color: var(--ok); margin-top: 4px; min-height: 1em; word-break: break-all; }
+.fld input[type=text] { width: 100%; font: 17px "Sarabun", sans-serif; padding: 9px 12px; border: 1px solid var(--line);
+  border-radius: 5px; background: var(--input-bg); color: var(--text); text-transform: uppercase; }
+.fld input[type=text]:focus { outline: 2px solid var(--navy); outline-offset: -1px; }
+.note { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
+button { font: 500 15px "Kanit", sans-serif; border: 0; border-radius: 5px; padding: 12px 22px; cursor: pointer;
+  background: var(--navy); color: var(--on-navy); white-space: nowrap; }
+button:hover:not(:disabled) { background: var(--navy-hover); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.sec { background: #2f7a4f; }
+button.sec:hover:not(:disabled) { background: #256340; }
+button.ghost { background: var(--card); color: var(--navy-text); border: 1.5px solid var(--navy-text); padding: 10.5px 20px; }
+button.ghost:hover:not(:disabled) { background: var(--bg); }
+.btns { display: flex; gap: 10px; }
+@media (max-width: 1000px) { .btns > button { flex: 1; } }
+.res-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+h2 { font: 500 18px "Kanit", sans-serif; margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.stat { background: var(--bg); border-radius: 8px; padding: 10px 12px; border-left: 4px solid var(--navy); }
+.stat .n { font-size: 22px; font-weight: 600; }
+.stat .l { font-size: 12.5px; color: var(--muted); }
+.warn { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+.okmsg { background: var(--ok-soft); color: var(--ok); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; word-break: break-all; }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; }
+code, .mono { font-family: "IBM Plex Mono", monospace; font-size: 13px; }
+details summary { cursor: pointer; color: var(--muted); }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<header class="bar"><div class="brand"><span class="logo-badge"><img src="assets/hal-logo.png" alt="Heung A Line"></span><h1>CUT BL — ตัด B/L → ชื่อไฟล์_PORTAL.txt</h1></div>
+  <div class="by">Project by Ms. Rattana Mudlae<br>Position Import DOC.</div>
+</header>
+<main>
+  <div class="card">
+    <div class="form">
+      <div class="fld" id="dropTxt">
+        <label class="lb" for="inTxt">HMAN (.txt)</label>
+        <input type="file" id="inTxt" accept=".txt">
+        <span class="fn" id="fnTxt"></span>
+      </div>
+      <div class="fld">
+        <label class="lb" for="startBl">เริ่มตัด B/L</label>
+        <input type="text" id="startBl" maxlength="38" value="HASLC03260602093" placeholder="ว่าง = ตั้งแต่ H02 แรก" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fld">
+        <label class="lb" for="endBl">ถึง B/L</label>
+        <input type="text" id="endBl" maxlength="38" value="HASLC03260701048" placeholder="ว่าง = ถึงบรรทัดสุดท้าย" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="btns">
+        <button id="run" disabled>ตัด B/L</button>
+        <button id="clear" class="ghost" type="button">ลบไฟล์</button>
+      </div>
+    </div>
+    <p class="note">ลบตั้งแต่บรรทัด H02 ของ B/L เริ่มตัด จนถึงบรรทัดสุดท้าย (H03 … H10) ของ B/L สุดท้าย (รวม sub-B/L …A, …B) ออก เหลือเฉพาะส่วนที่ไม่ได้ตัด · บรรทัดหัวไฟล์ HOU / H01 เก็บไว้เสมอ (ไม่มีแล้วโปรแกรม ECS ขึ้น invalid MMAN Text File) · เว้นว่างช่องเริ่มตัด = ตั้งแต่ H02 แรก · เว้นว่างช่องถึง = ถึงบรรทัดสุดท้าย · พิมพ์ HASLC… หรือ H02HASLC… ก็ได้ · ชื่อไฟล์ที่ได้ = ชื่อไฟล์ต้นฉบับก่อน "__" ตามด้วย _PORTAL เช่น KMGY_2608S_PORTAL.txt · ประมวลผลในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์</p>
+  </div>
+
+  <div class="card hidden" id="result">
+    <div class="res-head">
+      <h2>ผลการตัด B/L</h2>
+      <button id="dl" class="sec hidden">ดาวน์โหลด</button>
+    </div>
+    <div id="msgs"></div>
+    <div class="stats" id="stats"></div>
+    <div class="tbl-wrap"><table id="tbl"></table></div>
+  </div>
+</main>
+
+<script>
+let txtBuf = null, txtName = "", outBytes = null, outName = "";
+const $ = id => document.getElementById(id);
+const str = (b, s, e) => { let o = ""; for (let i = s; i < e; i++) o += String.fromCharCode(b[i]); return o; };
+// KMGY_2608S__THLCH_HMAN95.txt -> KMGY_2608S_PORTAL.txt
+const nameFor = f => f.replace(/\.[^.]*$/, "").split("__")[0] + "_PORTAL.txt";
+const esc = t => String(t).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+
+const d = $("dropTxt"), inp = $("inTxt");
+async function handle(f) {
+  try { txtBuf = new Uint8Array(await f.arrayBuffer()); txtName = f.name; $("fnTxt").textContent = f.name; }
+  catch (e) { txtBuf = null; $("fnTxt").textContent = "อ่านไฟล์ไม่ได้: " + e.message; }
+  $("run").disabled = !txtBuf;
+  $("dl").classList.add("hidden");
+}
+inp.addEventListener("change", () => inp.files[0] && handle(inp.files[0]));
+["dragenter", "dragover"].forEach(e => d.addEventListener(e, ev => ev.preventDefault()));
+d.addEventListener("drop", ev => { ev.preventDefault(); ev.dataTransfer.files[0] && handle(ev.dataTransfer.files[0]); });
+
+// delete the lines from the H02 of B/L `from` through the last line of B/L `to` (with its sub-B/Ls …A, …B);
+// the header (HOU, H01) and the other B/Ls stay. Blank from = first H02, blank to = last line. Bytes and CRLF kept as-is.
+function cut(buf, from, to) {
+  const starts = [0];
+  for (let i = 0; i < buf.length; i++) if (buf[i] === 10 && i + 1 < buf.length) starts.push(i + 1);
+  const total = starts.length, at = n => n < total ? starts[n] : buf.length;
+  const blAt = n => { const s = starts[n]; return str(buf, s, s + 3) === "H02" ? str(buf, s + 3, Math.min(at(n + 1), s + 38)).trim().toUpperCase() : null; };
+  const inGroup = (bl, key) => bl === key || (bl.length === key.length + 1 && bl.startsWith(key) && /[A-Z]$/.test(bl));
+  const first = starts.findIndex((_, n) => blAt(n) && (!from || blAt(n) === from));
+  if (first < 0) throw new Error(from ? "ไม่พบ B/L เริ่มต้น " + from + " (บรรทัด H02) ในไฟล์" : "ไม่พบบรรทัด H02 ในไฟล์");
+  let stop = total;
+  if (to) {
+    let last = -1;
+    for (let n = first; n < total; n++) { const bl = blAt(n); if (bl && inGroup(bl, to)) last = n; }
+    if (last < 0) throw new Error("ไม่พบ B/L " + to + " ในไฟล์หลัง B/L เริ่มต้น " + (from || "(H02 แรก)"));
+    stop = last + 1;
+    while (stop < total && !blAt(stop)) stop++;
+  }
+  const bls = [];
+  for (let n = 0; n < total; n++) { const bl = blAt(n); if (bl) bls.push({ bl, line: n + 1, cut: n >= first && n < stop }); }
+  // first is an H02, so HOU / H01 always stay
+  const res = new Uint8Array(at(first) + buf.length - at(stop));
+  res.set(buf.subarray(0, at(first)), 0);
+  res.set(buf.subarray(at(stop)), at(first));
+  return { buf: res, total, kept: total - (stop - first), firstLine: first + 1, lastLine: stop, bls };
+}
+
+const clean = id => { const v = $(id).value.trim().toUpperCase(); return v.startsWith("H02") ? v.slice(3).trim() : v; };
+
+function run() {
+  const from = clean("startBl"), to = clean("endBl");
+  $("result").classList.remove("hidden");
+  let r;
+  try { r = cut(txtBuf, from, to); }
+  catch (e) {
+    $("msgs").innerHTML = `<div class="warn">${esc(e.message)}</div>`;
+    $("stats").innerHTML = $("tbl").innerHTML = "";
+    $("dl").classList.add("hidden");
+    return;
+  }
+  outBytes = r.buf; outName = nameFor(txtName);
+  const gone = r.bls.filter(b => b.cut), left = r.bls.filter(b => !b.cut);
+  $("stats").innerHTML = [[gone.length, "B/L ที่ตัดออก"], [left.length, "B/L ที่เหลือ"], [r.total - r.kept, "บรรทัดที่ตัดออก"],
+    [r.kept, "บรรทัดที่เหลือ"], [outBytes.length.toLocaleString(), "ขนาดไฟล์ (ไบต์)"]]
+    .map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`).join("");
+  $("msgs").innerHTML = `<div class="okmsg">ตัดบรรทัด ${r.firstLine}–${r.lastLine} ออก (B/L ${esc(gone[0].bl)} ถึง ${esc(gone[gone.length - 1].bl)}) · เหลือ ${r.kept} จาก ${r.total} บรรทัด รวมหัวไฟล์ HOU / H01 · ไฟล์ ${esc(outName)}</div>`
+    + (left.length ? "" : `<div class="warn">ไม่เหลือ B/L ในไฟล์ (เหลือเฉพาะหัวไฟล์)</div>`);
+  $("tbl").innerHTML = "<tr><th>#</th><th>B/L No.</th><th>บรรทัดในไฟล์ต้นฉบับ</th><th>ผล</th></tr>" +
+    r.bls.map((b, i) => `<tr><td>${i + 1}</td><td class="mono">${esc(b.bl)}</td><td class="mono">${b.line}</td><td>${b.cut ? "ตัดออก" : "<b>เหลือ</b>"}</td></tr>`).join("");
+  $("dl").textContent = "ดาวน์โหลด " + outName;
+  $("dl").classList.remove("hidden");
+}
+
+$("run").addEventListener("click", run);
+$("clear").addEventListener("click", () => {
+  txtBuf = outBytes = null; txtName = outName = "";
+  inp.value = ""; $("fnTxt").textContent = "";
+  ["msgs", "stats", "tbl"].forEach(id => $(id).innerHTML = "");
+  $("result").classList.add("hidden"); $("dl").classList.add("hidden");
+  $("run").disabled = true;
+});
+["startBl", "endBl"].forEach(id => $(id).addEventListener("input", () => $("dl").classList.add("hidden")));
+$("dl").addEventListener("click", () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([outBytes], { type: "text/plain" }));
+  a.download = outName; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+</script>
+</body>
+</html>

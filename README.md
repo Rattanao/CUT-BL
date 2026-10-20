@@ -19,7 +19,7 @@
 ## วิธีใช้ 2: คำสั่ง Python
 
 ```
-7-status lch/
+7-cut bl-portal/
 ├─ cut_bl.py
 ├─ input/    ← วางไฟล์ .txt 1 ไฟล์
 └─ output/   ← ได้ KMGY_2608S_PORTAL.txt ที่นี่

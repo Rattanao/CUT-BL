@@ -32,6 +32,8 @@ H02HASLC03260602438 …  ← next B/L
 - **On every B/L left** (both modes):
   - `H05` = the `H06` name (from col 5) with single spaces only, padded with spaces to the H06
     line length. `H05TH` (cols 0-4) stays; `H06` itself is never changed.
+  - **TRANSIT / TRANSHIPMENT B/L** (the word anywhere in the B/L, also "INTRANSIT"; "TRANSPORT"
+    does not count): never change its `H05` or `H06`.
   - `H07` package unit (cols 10-11) `PG` → `PX`, e.g. `H070000100PG` → `H070000100PX`.
 - **Always keep `HOU…` and `H01`.** Without them ECS-Manifest (Import MMAN, "01 - Import EDI
   FLat File") says *"This file is invalid MMAN Text File"*.
@@ -59,7 +61,7 @@ H02HASLC03260602438 …  ← next B/L
    PYTHONIOENCODING=utf-8 python "<skill dir>/scripts/cut_bl.py" --keep <B/L>,<B/L> "<folder containing input>"
    ```
    (If `python` is only the Microsoft Store alias, use `py` instead.) No extra packages needed.
-2. Report to the user in Thai: lines removed (total → left), the B/L range deleted (or the B/Ls kept) and how many, which B/Ls got H05 = H06 and which went PG → PX,
+2. Report to the user in Thai: lines removed (total → left), the B/L range deleted (or the B/Ls kept) and how many, which B/Ls got H05 = H06, which are TRANSIT (H05 / H06 kept) and which went PG → PX,
    B/Ls, the B/Ls left, the output file name. Show that `HOU` / `H01` are still on top.
 3. If the script prints `ERROR` (B/L not found, more than one .txt in input), tell the user and
    ask. Don't guess.

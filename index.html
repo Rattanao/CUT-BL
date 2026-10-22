@@ -112,7 +112,7 @@ details summary { cursor: pointer; color: var(--muted); }
         <button id="clear" class="ghost" type="button">ลบไฟล์</button>
       </div>
     </div>
-    <p class="note"><b>แบบที่ 1 ตัดช่วง</b>: ลบตั้งแต่บรรทัด H02 ของ B/L เริ่มตัด จนถึงบรรทัดสุดท้าย (H03 … H10) ของ B/L สุดท้าย (รวม sub-B/L …A, …B) ออก เหลือเฉพาะส่วนที่ไม่ได้ตัด · เว้นว่างช่องเริ่มตัด = ตั้งแต่ H02 แรก · เว้นว่างช่องถึง = ถึงบรรทัดสุดท้าย · <b>แบบที่ 2 เก็บเฉพาะ B/L</b>: ใส่ B/L ที่ต้องการเก็บ 1 ตัวหรือหลายตัว คั่นด้วย , (เช่น HASLJ01260800588,HASLK02261000346) รวม sub-B/L ของแต่ละตัว B/L อื่นตัดทิ้งทั้งหมด · ใช้ได้ทีละแบบ · เว้นว่างทุกช่อง = ไม่ตัด · <b>ทุก B/L ที่เหลือ</b>: H05 = ชื่อเดียวกับ H06 เว้นวรรค 1 เคาะเท่านั้น (H06 คงเดิม) · H07 หน่วยหีบห่อ PG → PX · บรรทัดหัวไฟล์ HOU / H01 เก็บไว้เสมอ (ไม่มีแล้วโปรแกรม ECS ขึ้น invalid MMAN Text File) · พิมพ์ HASLC… หรือ H02HASLC… ก็ได้ · ชื่อไฟล์ที่ได้ = ชื่อไฟล์ต้นฉบับก่อน "__" ตามด้วย _PORTAL เช่น KMGY_2608S_PORTAL.txt · ประมวลผลในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์</p>
+    <p class="note"><b>แบบที่ 1 ตัดช่วง</b>: ลบตั้งแต่บรรทัด H02 ของ B/L เริ่มตัด จนถึงบรรทัดสุดท้าย (H03 … H10) ของ B/L สุดท้าย (รวม sub-B/L …A, …B) ออก เหลือเฉพาะส่วนที่ไม่ได้ตัด · เว้นว่างช่องเริ่มตัด = ตั้งแต่ H02 แรก · เว้นว่างช่องถึง = ถึงบรรทัดสุดท้าย · <b>แบบที่ 2 เก็บเฉพาะ B/L</b>: ใส่ B/L ที่ต้องการเก็บ 1 ตัวหรือหลายตัว คั่นด้วย , (เช่น HASLJ01260800588,HASLK02261000346) รวม sub-B/L ของแต่ละตัว B/L อื่นตัดทิ้งทั้งหมด · ใช้ได้ทีละแบบ · เว้นว่างทุกช่อง = ไม่ตัด · <b>ทุก B/L ที่เหลือ</b>: H05 = ชื่อเดียวกับ H06 เว้นวรรค 1 เคาะเท่านั้น (H06 คงเดิม) ยกเว้น B/L TRANSIT / TRANSHIPMENT (รวม INTRANSIT) ห้ามแก้ H05 / H06 · H07 หน่วยหีบห่อ PG → PX · บรรทัดหัวไฟล์ HOU / H01 เก็บไว้เสมอ (ไม่มีแล้วโปรแกรม ECS ขึ้น invalid MMAN Text File) · พิมพ์ HASLC… หรือ H02HASLC… ก็ได้ · ชื่อไฟล์ที่ได้ = ชื่อไฟล์ต้นฉบับก่อน "__" ตามด้วย _PORTAL เช่น KMGY_2608S_PORTAL.txt · ประมวลผลในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์</p>
   </div>
 
   <div class="card hidden" id="result">
@@ -200,13 +200,19 @@ function keepOnly(buf, keys) {
 
 // every B/L left: H05 (consignee) = the H06 (notify) name from col 5 with single spaces, padded to the H06 line
 // length ("H05TH" kept, H06 untouched); H07 package unit (col 10-11) PG -> PX
+// TRANSIT / TRANSHIPMENT anywhere in the B/L (also "INTRANSIT"): H05 / H06 never changed; "TRANSPORT" does not count
+const TRANSIT_RE = /TRANSIT\b|\bTRANS[\s-]?S?HIP/i;
 function fixLines(buf) {
   const txt = str(buf, 0, buf.length), lines = txt.match(/[^\n]*\n|[^\n]+$/g) || [];
-  const rep = { h05: [], same: 0, noH06: [], px: [] };
-  let bl = null;
+  const rep = { h05: [], same: 0, noH06: [], px: [], transit: [] };
+  let bl = null, transit = false;
   lines.forEach((l, i) => {
-    if (l.startsWith("H02")) bl = l.slice(3, 38).trim();
-    else if (l.startsWith("H05")) {
+    if (l.startsWith("H02")) {
+      bl = l.slice(3, 38).trim();
+      let e = i + 1; while (e < lines.length && !lines[e].startsWith("H02")) e++;
+      transit = lines.slice(i, e).some(x => TRANSIT_RE.test(x));
+      if (transit) rep.transit.push(bl);
+    } else if (l.startsWith("H05") && !transit) {
       let j = i + 1; while (j < lines.length && !/^H0[26]/.test(lines[j])) j++;
       if (j >= lines.length || !lines[j].startsWith("H06")) { rep.noH06.push(bl); return; }
       const eol = l.match(/\r?\n?$/)[0], h06 = lines[j].replace(/\r?\n$/, "");
@@ -241,14 +247,14 @@ function run() {
   const fx = fixLines(r.buf);
   outBytes = fx.buf; outName = nameFor(txtName);
   const gone = r.bls.filter(b => b.cut), left = r.bls.filter(b => !b.cut);
-  $("stats").innerHTML = [[gone.length, "B/L ที่ตัดออก"], [left.length, "B/L ที่เหลือ"], [fx.rep.h05.length, "H05 ที่แก้"], [fx.rep.px.length, "PG → PX"], [r.total - r.kept, "บรรทัดที่ตัดออก"],
+  $("stats").innerHTML = [[gone.length, "B/L ที่ตัดออก"], [left.length, "B/L ที่เหลือ"], [fx.rep.h05.length, "H05 ที่แก้"], [fx.rep.transit.length, "B/L TRANSIT"], [fx.rep.px.length, "PG → PX"], [r.total - r.kept, "บรรทัดที่ตัดออก"],
     [r.kept, "บรรทัดที่เหลือ"], [outBytes.length.toLocaleString(), "ขนาดไฟล์ (ไบต์)"]]
     .map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`).join("");
   const what = !keys.length && !from && !to ? "ไม่ได้ตัด (เว้นว่างทุกช่อง) แก้ H05 / H07 อย่างเดียว"
     : keys.length ? `เก็บเฉพาะ B/L ${esc(left.map(b => b.bl).join(", "))} · ตัด B/L อื่นออก ${gone.length} ตัว`
                            : `ตัดบรรทัด ${r.firstLine}–${r.lastLine} ออก (B/L ${esc(gone[0].bl)} ถึง ${esc(gone[gone.length - 1].bl)})`;
   $("msgs").innerHTML = `<div class="okmsg">${what} · เหลือ ${r.kept} จาก ${r.total} บรรทัด รวมหัวไฟล์ HOU / H01 · ไฟล์ ${esc(outName)}</div>`
-    + `<div class="okmsg">H05 = ชื่อจาก H06 (เว้นวรรค 1 เคาะ): แก้ ${fx.rep.h05.length} B/L${fx.rep.h05.length ? " (" + esc(fx.rep.h05.join(", ")) + ")" : ""} · ตรงอยู่แล้ว ${fx.rep.same} B/L · H07 PG → PX: ${fx.rep.px.length ? esc(fx.rep.px.join(", ")) : "ไม่มี"}</div>`
+    + `<div class="okmsg">H05 = ชื่อจาก H06 (เว้นวรรค 1 เคาะ): แก้ ${fx.rep.h05.length} B/L${fx.rep.h05.length ? " (" + esc(fx.rep.h05.join(", ")) + ")" : ""} · ตรงอยู่แล้ว ${fx.rep.same} B/L · TRANSIT / TRANSHIPMENT (H05 / H06 คงเดิม): ${fx.rep.transit.length ? esc(fx.rep.transit.join(", ")) : "ไม่มี"} · H07 PG → PX: ${fx.rep.px.length ? esc(fx.rep.px.join(", ")) : "ไม่มี"}</div>`
     + (fx.rep.noH06.length ? `<div class="warn">H05 ไม่มี H06 (คงเดิม ตรวจสอบ): ${esc(fx.rep.noH06.join(", "))}</div>` : "")
     + (left.length ? "" : `<div class="warn">ไม่เหลือ B/L ในไฟล์ (เหลือเฉพาะหัวไฟล์)</div>`);
   $("tbl").innerHTML = "<tr><th>#</th><th>B/L No.</th><th>บรรทัดในไฟล์ต้นฉบับ</th><th>ผล</th></tr>" +

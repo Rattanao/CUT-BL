@@ -13,11 +13,13 @@ B/L is deleted.
 Either way the header lines (HOU, H01) always stay - ECS-Manifest rejects the file
 without them ("invalid MMAN Text File").
 Then on every B/L left: H05 (consignee) = the H06 (notify) name with single spaces only
-(cols 0-4 "H05TH" kept, H06 itself untouched), and H07 package unit PG -> PX.
+(cols 0-4 "H05TH" kept, H06 itself untouched) - except TRANSIT / TRANSHIPMENT B/Ls
+(also "INTRANSIT"), whose H05 / H06 are never changed - and H07 package unit PG -> PX.
 Result: <folder>/output/<name before "__">_PORTAL.txt, e.g. KMGY_2608S_PORTAL.txt.
 The source file is never modified; bytes and CRLF are kept as-is.
 """
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -69,16 +71,25 @@ def keep_only(raw: bytes, keys):
     return b"".join(kept), len(kept), len(lines), gone, left
 
 
+# TRANSIT / TRANSHIPMENT anywhere in the B/L (also "INTRANSIT"); "TRANSPORT" does not count
+TRANSIT_RE = re.compile(rb"TRANSIT\b|\bTRANS[\s-]?S?HIP", re.I)
+
+
 def fix_lines(data: bytes):
     """H05 = H06 name (from col 5) with single spaces, padded to the H06 line length;
-    H07 package unit (col 10-11) PG -> PX. Returns (data, report)."""
+    TRANSIT / TRANSHIPMENT B/Ls keep H05 as it is. H07 package unit (col 10-11) PG -> PX.
+    Returns (data, report)."""
     lines = data.splitlines(keepends=True)
-    rep = {"h05": [], "h05_same": 0, "no_h06": [], "px": []}
-    bl = None
+    rep = {"h05": [], "h05_same": 0, "no_h06": [], "px": [], "transit": []}
+    bl, transit = None, False
     for i, l in enumerate(lines):
         if l.startswith(b"H02"):
             bl = l[3:38].strip().decode("latin-1")
-        elif l.startswith(b"H05"):
+            e = next((k for k in range(i + 1, len(lines)) if lines[k].startswith(b"H02")), len(lines))
+            transit = any(TRANSIT_RE.search(x) for x in lines[i:e])
+            if transit:
+                rep["transit"].append(bl)
+        elif l.startswith(b"H05") and not transit:
             j = next((k for k in range(i + 1, len(lines)) if lines[k][:3] in (b"H06", b"H02")), None)
             if j is None or not lines[j].startswith(b"H06"):
                 rep["no_h06"].append(bl)
@@ -164,6 +175,7 @@ def main():
     print(f"Deleted : {len(gone)} B/L" + (f" ({gone[0]} to {gone[-1]})" if gone else ""))
     print(f"Left    : {len(left)} B/L {left}")
     print(f"H05=H06 : changed {rep['h05'] or 'none'}, already same {rep['h05_same']}")
+    print(f"TRANSIT : {rep['transit'] or 'none'}  (H05 / H06 kept as they are)")
     print(f"PG -> PX: {rep['px'] or 'none'}")
     if rep["no_h06"]:
         print(f"WARNING H05 without H06 (kept): {rep['no_h06']}")

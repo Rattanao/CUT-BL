@@ -11,6 +11,8 @@ the last line.
 B/L is deleted.
 Either way the header lines (HOU, H01) always stay - ECS-Manifest rejects the file
 without them ("invalid MMAN Text File").
+Then on every B/L left: H05 (consignee) = the H06 (notify) name with single spaces only
+(cols 0-4 "H05TH" kept, H06 itself untouched), and H07 package unit PG -> PX.
 Result: <folder>/output/<name before "__">_PORTAL.txt, e.g. KMGY_2608S_PORTAL.txt.
 The source file is never modified; bytes and CRLF are kept as-is.
 """
@@ -66,6 +68,35 @@ def keep_only(raw: bytes, keys):
     return b"".join(kept), len(kept), len(lines), gone, left
 
 
+def fix_lines(data: bytes):
+    """H05 = H06 name (from col 5) with single spaces, padded to the H06 line length;
+    H07 package unit (col 10-11) PG -> PX. Returns (data, report)."""
+    lines = data.splitlines(keepends=True)
+    rep = {"h05": [], "h05_same": 0, "no_h06": [], "px": []}
+    bl = None
+    for i, l in enumerate(lines):
+        if l.startswith(b"H02"):
+            bl = l[3:38].strip().decode("latin-1")
+        elif l.startswith(b"H05"):
+            j = next((k for k in range(i + 1, len(lines)) if lines[k][:3] in (b"H06", b"H02")), None)
+            if j is None or not lines[j].startswith(b"H06"):
+                rep["no_h06"].append(bl)
+                continue
+            eol = l[len(l.rstrip(b"\r\n")):]
+            h06 = lines[j].rstrip(b"\r\n")
+            name = b" ".join(h06[5:].split())
+            new = (l[:5] + name).ljust(len(h06)) + eol
+            if new != l:
+                lines[i] = new
+                rep["h05"].append(bl)
+            else:
+                rep["h05_same"] += 1
+        elif l.startswith(b"H07") and l[10:12] == b"PG":
+            lines[i] = l[:10] + b"PX" + l[12:]
+            rep["px"].append(bl)
+    return b"".join(lines), rep
+
+
 def cut(raw: bytes, first_bl: str, last_bl: str = ""):
     """Delete the lines from the H02 of B/L `first_bl` through the last line of B/L `last_bl`
     (with its sub-B/Ls …A, …B); the header (HOU, H01) and the other B/Ls stay.
@@ -119,12 +150,17 @@ def main():
         data, kept, total, gone, left = keep_only(src.read_bytes(), a.keep.split(","))
     else:
         data, kept, total, gone, left = cut(src.read_bytes(), a.bl, a.to)
+    data, rep = fix_lines(data)
     out.write_bytes(data)
     print(f"IN      : {src}\nOUT     : {out}")
     print(f"Mode    : {'keep only ' + a.keep.upper() if a.keep else 'delete range'}")
     print(f"Cut     : removed {total - kept} lines ({total} -> {kept})")
     print(f"Deleted : {len(gone)} B/L" + (f" ({gone[0]} to {gone[-1]})" if gone else ""))
     print(f"Left    : {len(left)} B/L {left}")
+    print(f"H05=H06 : changed {rep['h05'] or 'none'}, already same {rep['h05_same']}")
+    print(f"PG -> PX: {rep['px'] or 'none'}")
+    if rep["no_h06"]:
+        print(f"WARNING H05 without H06 (kept): {rep['no_h06']}")
 
 
 if __name__ == "__main__":

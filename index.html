@@ -43,7 +43,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 24px 28px 60px; }
 @media (max-width: 640px) { header.bar, main { padding-left: 16px; padding-right: 16px; } }
 .card { background: var(--card); border-radius: 10px; padding: 24px 26px; margin-bottom: 18px;
   box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 14px rgba(0,0,0,.04); }
-.form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 18px; align-items: end; }
+.form { display: grid; grid-template-columns: 1fr 1fr 1fr 1.4fr auto; gap: 18px; align-items: end; }
 .form > * { min-width: 0; }
 @media (max-width: 1000px) { .form { grid-template-columns: 1fr; } .form button { width: 100%; } }
 @media (max-width: 640px) { .card { padding: 18px 16px; } }
@@ -97,18 +97,22 @@ details summary { cursor: pointer; color: var(--muted); }
       </div>
       <div class="fld">
         <label class="lb" for="startBl">เริ่มตัด B/L</label>
-        <input type="text" id="startBl" maxlength="38" value="HASLC03260602093" placeholder="ว่าง = ตั้งแต่ H02 แรก" autocomplete="off" spellcheck="false">
+        <input type="text" id="startBl" maxlength="38" placeholder="ว่าง = ตั้งแต่ H02 แรก" autocomplete="off" spellcheck="false">
       </div>
       <div class="fld">
         <label class="lb" for="endBl">ถึง B/L</label>
-        <input type="text" id="endBl" maxlength="38" value="HASLC03260701048" placeholder="ว่าง = ถึงบรรทัดสุดท้าย" autocomplete="off" spellcheck="false">
+        <input type="text" id="endBl" maxlength="38" placeholder="ว่าง = ถึงบรรทัดสุดท้าย" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fld">
+        <label class="lb" for="keepBl">หรือ เก็บเฉพาะ B/L</label>
+        <input type="text" id="keepBl" placeholder="HASL…, HASL… (คั่นด้วย ,)" autocomplete="off" spellcheck="false">
       </div>
       <div class="btns">
         <button id="run" disabled>ตัด B/L</button>
         <button id="clear" class="ghost" type="button">ลบไฟล์</button>
       </div>
     </div>
-    <p class="note">ลบตั้งแต่บรรทัด H02 ของ B/L เริ่มตัด จนถึงบรรทัดสุดท้าย (H03 … H10) ของ B/L สุดท้าย (รวม sub-B/L …A, …B) ออก เหลือเฉพาะส่วนที่ไม่ได้ตัด · บรรทัดหัวไฟล์ HOU / H01 เก็บไว้เสมอ (ไม่มีแล้วโปรแกรม ECS ขึ้น invalid MMAN Text File) · เว้นว่างช่องเริ่มตัด = ตั้งแต่ H02 แรก · เว้นว่างช่องถึง = ถึงบรรทัดสุดท้าย · พิมพ์ HASLC… หรือ H02HASLC… ก็ได้ · ชื่อไฟล์ที่ได้ = ชื่อไฟล์ต้นฉบับก่อน "__" ตามด้วย _PORTAL เช่น KMGY_2608S_PORTAL.txt · ประมวลผลในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์</p>
+    <p class="note"><b>แบบที่ 1 ตัดช่วง</b>: ลบตั้งแต่บรรทัด H02 ของ B/L เริ่มตัด จนถึงบรรทัดสุดท้าย (H03 … H10) ของ B/L สุดท้าย (รวม sub-B/L …A, …B) ออก เหลือเฉพาะส่วนที่ไม่ได้ตัด · เว้นว่างช่องเริ่มตัด = ตั้งแต่ H02 แรก · เว้นว่างช่องถึง = ถึงบรรทัดสุดท้าย · <b>แบบที่ 2 เก็บเฉพาะ B/L</b>: ใส่ B/L ที่ต้องการเก็บ 1 ตัวหรือหลายตัว คั่นด้วย , (เช่น HASLJ01260800588,HASLK02261000346) รวม sub-B/L ของแต่ละตัว B/L อื่นตัดทิ้งทั้งหมด · ใช้ได้ทีละแบบ · บรรทัดหัวไฟล์ HOU / H01 เก็บไว้เสมอ (ไม่มีแล้วโปรแกรม ECS ขึ้น invalid MMAN Text File) · พิมพ์ HASLC… หรือ H02HASLC… ก็ได้ · ชื่อไฟล์ที่ได้ = ชื่อไฟล์ต้นฉบับก่อน "__" ตามด้วย _PORTAL เช่น KMGY_2608S_PORTAL.txt · ประมวลผลในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์</p>
   </div>
 
   <div class="card hidden" id="result">
@@ -169,13 +173,43 @@ function cut(buf, from, to) {
   return { buf: res, total, kept: total - (stop - first), firstLine: first + 1, lastLine: stop, bls };
 }
 
-const clean = id => { const v = $(id).value.trim().toUpperCase(); return v.startsWith("H02") ? v.slice(3).trim() : v; };
+// keep only the B/Ls in `keys` (with sub-B/Ls), each from its H02 to the line before the next H02;
+// the header (HOU, H01) always stays, every other B/L is deleted. Bytes and CRLF kept as-is.
+function keepOnly(buf, keys) {
+  const starts = [0];
+  for (let i = 0; i < buf.length; i++) if (buf[i] === 10 && i + 1 < buf.length) starts.push(i + 1);
+  const total = starts.length, at = n => n < total ? starts[n] : buf.length;
+  const h02 = starts.map((_, n) => n).filter(n => str(buf, starts[n], starts[n] + 3) === "H02");
+  if (!h02.length) throw new Error("ไม่พบบรรทัด H02 ในไฟล์");
+  const inGroup = (bl, key) => bl === key || (bl.length === key.length + 1 && bl.startsWith(key) && /[A-Z]$/.test(bl));
+  const parts = [buf.subarray(0, at(h02[0]))], bls = [];
+  let kept = h02[0];
+  h02.forEach((s, j) => {
+    const e = j + 1 < h02.length ? h02[j + 1] : total;
+    const bl = str(buf, starts[s] + 3, Math.min(at(s + 1), starts[s] + 38)).trim().toUpperCase();
+    const keep = keys.some(k => inGroup(bl, k));
+    if (keep) { parts.push(buf.subarray(at(s), at(e))); kept += e - s; }
+    bls.push({ bl, line: s + 1, cut: !keep });
+  });
+  const missing = keys.filter(k => !bls.some(b => !b.cut && inGroup(b.bl, k)));
+  if (missing.length) throw new Error("ไม่พบ B/L ในไฟล์: " + missing.join(", "));
+  const res = new Uint8Array(parts.reduce((a, p) => a + p.length, 0));
+  let o = 0; for (const p of parts) { res.set(p, o); o += p.length; }
+  return { buf: res, total, kept, bls };
+}
+
+const norm = v => { v = v.trim().toUpperCase(); return v.startsWith("H02") ? v.slice(3).trim() : v; };
+const clean = id => norm($(id).value);
 
 function run() {
   const from = clean("startBl"), to = clean("endBl");
+  const keys = $("keepBl").value.split(",").map(norm).filter(Boolean);
   $("result").classList.remove("hidden");
   let r;
-  try { r = cut(txtBuf, from, to); }
+  try {
+    if (keys.length && (from || to)) throw new Error("ใช้ได้ทีละแบบ: ใส่ช่อง เริ่มตัด / ถึง B/L หรือช่อง เก็บเฉพาะ B/L อย่างใดอย่างหนึ่ง");
+    r = keys.length ? keepOnly(txtBuf, keys) : cut(txtBuf, from, to);
+  }
   catch (e) {
     $("msgs").innerHTML = `<div class="warn">${esc(e.message)}</div>`;
     $("stats").innerHTML = $("tbl").innerHTML = "";
@@ -187,7 +221,9 @@ function run() {
   $("stats").innerHTML = [[gone.length, "B/L ที่ตัดออก"], [left.length, "B/L ที่เหลือ"], [r.total - r.kept, "บรรทัดที่ตัดออก"],
     [r.kept, "บรรทัดที่เหลือ"], [outBytes.length.toLocaleString(), "ขนาดไฟล์ (ไบต์)"]]
     .map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`).join("");
-  $("msgs").innerHTML = `<div class="okmsg">ตัดบรรทัด ${r.firstLine}–${r.lastLine} ออก (B/L ${esc(gone[0].bl)} ถึง ${esc(gone[gone.length - 1].bl)}) · เหลือ ${r.kept} จาก ${r.total} บรรทัด รวมหัวไฟล์ HOU / H01 · ไฟล์ ${esc(outName)}</div>`
+  const what = keys.length ? `เก็บเฉพาะ B/L ${esc(left.map(b => b.bl).join(", "))} · ตัด B/L อื่นออก ${gone.length} ตัว`
+                           : `ตัดบรรทัด ${r.firstLine}–${r.lastLine} ออก (B/L ${esc(gone[0].bl)} ถึง ${esc(gone[gone.length - 1].bl)})`;
+  $("msgs").innerHTML = `<div class="okmsg">${what} · เหลือ ${r.kept} จาก ${r.total} บรรทัด รวมหัวไฟล์ HOU / H01 · ไฟล์ ${esc(outName)}</div>`
     + (left.length ? "" : `<div class="warn">ไม่เหลือ B/L ในไฟล์ (เหลือเฉพาะหัวไฟล์)</div>`);
   $("tbl").innerHTML = "<tr><th>#</th><th>B/L No.</th><th>บรรทัดในไฟล์ต้นฉบับ</th><th>ผล</th></tr>" +
     r.bls.map((b, i) => `<tr><td>${i + 1}</td><td class="mono">${esc(b.bl)}</td><td class="mono">${b.line}</td><td>${b.cut ? "ตัดออก" : "<b>เหลือ</b>"}</td></tr>`).join("");
@@ -203,7 +239,7 @@ $("clear").addEventListener("click", () => {
   $("result").classList.add("hidden"); $("dl").classList.add("hidden");
   $("run").disabled = true;
 });
-["startBl", "endBl"].forEach(id => $(id).addEventListener("input", () => $("dl").classList.add("hidden")));
+["startBl", "endBl", "keepBl"].forEach(id => $(id).addEventListener("input", () => $("dl").classList.add("hidden")));
 $("dl").addEventListener("click", () => {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([outBytes], { type: "text/plain" }));

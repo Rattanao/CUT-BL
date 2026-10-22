@@ -3,6 +3,7 @@ or keep only the B/Ls you name.
 
     python cut_bl.py <first B/L to delete> [folder] [--to <last B/L to delete>]
     python cut_bl.py --keep <B/L>,<B/L>,... [folder]
+    python cut_bl.py --all [folder]          (no cut, only the H05 / H07 fixes)
 
 Range: deletes the lines from the H02 of the first B/L through the last line (H03 … H10)
 of the last B/L and its sub-B/Ls; everything else is kept. No --to = delete through
@@ -131,14 +132,15 @@ def main():
     ap.add_argument("bl", nargs="?", default="", help="first B/L to delete, e.g. HASLC03260602093")
     ap.add_argument("folder", nargs="?", default=".", help="folder holding input/ (default: current folder)")
     ap.add_argument("--to", default="", help="last B/L to delete (with its sub-B/Ls); default: to the last line")
+    ap.add_argument("--all", action="store_true", help="no cut: keep every B/L, only fix H05 / H07")
     ap.add_argument("--keep", default="", help="keep only these B/Ls, comma separated, e.g. HASLJ01260800588,HASLK02261000346")
     a = ap.parse_args()
-    if a.keep and a.bl and a.folder == ".":  # cut_bl.py --keep X,Y <folder>
+    if (a.keep or a.all) and a.bl and a.folder == ".":  # cut_bl.py --keep X,Y <folder> / --all <folder>
         a.folder, a.bl = a.bl, ""
-    if a.keep and (a.bl or a.to):
-        sys.exit("ERROR: use either a range (<first B/L> --to <last B/L>) or --keep, not both")
-    if not a.keep and not a.bl:
-        ap.error("give the first B/L to delete, or --keep <B/L>,<B/L>")
+    if sum(map(bool, (a.keep, a.all, a.bl or a.to))) > 1:
+        sys.exit("ERROR: use one of: a range (<first B/L> --to <last B/L>), --keep, or --all")
+    if not (a.keep or a.all or a.bl):
+        ap.error("give the first B/L to delete, --keep <B/L>,<B/L>, or --all")
 
     folder = Path(a.folder).resolve()
     inp = next((d for d in (folder / "input", folder / "Input") if d.is_dir()), folder)
@@ -146,14 +148,18 @@ def main():
     out = folder / "output" / out_name(src)
     out.parent.mkdir(exist_ok=True)
 
-    if a.keep:
-        data, kept, total, gone, left = keep_only(src.read_bytes(), a.keep.split(","))
+    raw = src.read_bytes()
+    if a.all:
+        n = raw.splitlines()
+        data, kept, total, gone, left = raw, len(n), len(n), [], [l[3:38].strip().decode("latin-1") for l in n if l.startswith(b"H02")]
+    elif a.keep:
+        data, kept, total, gone, left = keep_only(raw, a.keep.split(","))
     else:
-        data, kept, total, gone, left = cut(src.read_bytes(), a.bl, a.to)
+        data, kept, total, gone, left = cut(raw, a.bl, a.to)
     data, rep = fix_lines(data)
     out.write_bytes(data)
     print(f"IN      : {src}\nOUT     : {out}")
-    print(f"Mode    : {'keep only ' + a.keep.upper() if a.keep else 'delete range'}")
+    print(f"Mode    : {'no cut' if a.all else 'keep only ' + a.keep.upper() if a.keep else 'delete range'}")
     print(f"Cut     : removed {total - kept} lines ({total} -> {kept})")
     print(f"Deleted : {len(gone)} B/L" + (f" ({gone[0]} to {gone[-1]})" if gone else ""))
     print(f"Left    : {len(left)} B/L {left}")

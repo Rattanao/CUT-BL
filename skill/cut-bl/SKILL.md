@@ -27,6 +27,8 @@ H02HASLC03260602438 …  ← next B/L
 - **Keep mode ("เก็บ B/L …", comma separated, 1 or more):** keep only those B/Ls (each from
   its H02 to the line before the next H02, with sub-B/Ls), in file order; delete all other B/Ls.
   Range and keep mode are used one at a time, never both.
+- **No B/L at all = no cut** (`--all`, or every web field blank): only the H05 / H07 fixes.
+  Use it only when the user asks for that; otherwise ask which B/Ls.
 - **On every B/L left** (both modes):
   - `H05` = the `H06` name (from col 5) with single spaces only, padded with spaces to the H06
     line length. `H05TH` (cols 0-4) stays; `H06` itself is never changed.

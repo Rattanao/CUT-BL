@@ -43,8 +43,9 @@ def norm_bl(bl: str) -> str:
 
 
 def in_group(bl, key):
-    """B/L `bl` is `key` or one of its sub-B/Ls (…A, …B)"""
-    return bl == key or (len(bl) == len(key) + 1 and bl.startswith(key) and bl[-1].isalpha())
+    """B/L `bl` is `key` or one of its sub-B/Ls: …A … …Z, …ZA … …ZZ, …ZZA … (letters only after the key)"""
+    rest = bl[len(key):]
+    return bl == key or (bl.startswith(key) and rest.isascii() and rest.isalpha() and rest.isupper())
 
 
 def keep_only(raw: bytes, keys):

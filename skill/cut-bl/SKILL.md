@@ -27,6 +27,9 @@ H02HASLC03260602438 …  ← next B/L
 - **Keep mode ("เก็บ B/L …", comma separated, 1 or more):** keep only those B/Ls (each from
   its H02 to the line before the next H02, with sub-B/Ls), in file order; delete all other B/Ls.
   Range and keep mode are used one at a time, never both.
+- **Sub-B/Ls can have several letters**: `…1955A` … `…1955Z`, `…1955ZA` … `…1955ZZ`, `…1955ZZA` …
+  `…1955ZZZD`. A B/L number covers every sub-B/L that is the number + letters only
+  (e.g. SWSP_2610S: `HASLC01261001955` = 83 B/Ls, the master + A … ZZZD).
 - **No B/L at all = no cut** (`--all`, or every web field blank): only the H05 / H07 fixes.
   Use it only when the user asks for that; otherwise ask which B/Ls.
 - **On every B/L left** (both modes):

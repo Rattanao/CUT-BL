@@ -43,7 +43,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 24px 28px 60px; }
 @media (max-width: 640px) { header.bar, main { padding-left: 16px; padding-right: 16px; } }
 .card { background: var(--card); border-radius: 10px; padding: 24px 26px; margin-bottom: 18px;
   box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 14px rgba(0,0,0,.04); }
-.form { display: grid; grid-template-columns: 1fr 1fr 1fr 1.4fr auto; gap: 18px; align-items: end; }
+.form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 18px; align-items: end; }
 .form > * { min-width: 0; }
 @media (max-width: 1000px) { .form { grid-template-columns: 1fr; } .form button { width: 100%; } }
 @media (max-width: 640px) { .card { padding: 18px 16px; } }
@@ -54,7 +54,11 @@ main { max-width: 1200px; margin: 0 auto; padding: 24px 28px 60px; }
 .fld .fn { display: block; font-size: 12.5px; color: var(--ok); margin-top: 4px; min-height: 1em; word-break: break-all; }
 .fld input[type=text] { width: 100%; font: 17px "Sarabun", sans-serif; padding: 9px 12px; border: 1px solid var(--line);
   border-radius: 5px; background: var(--input-bg); color: var(--text); text-transform: uppercase; }
-.fld input[type=text]:focus { outline: 2px solid var(--navy); outline-offset: -1px; }
+.fld input[type=text]:focus, .fld textarea:focus { outline: 2px solid var(--navy); outline-offset: -1px; }
+.fld.wide { grid-column: 1 / -1; }
+.fld textarea { width: 100%; font: 16px/1.6 "IBM Plex Mono", monospace; padding: 9px 12px; border: 1px solid var(--line);
+  border-radius: 5px; background: var(--input-bg); color: var(--text); text-transform: uppercase; resize: vertical; min-height: 48px; }
+.fld textarea::placeholder { font-family: "Sarabun", sans-serif; text-transform: none; }
 .note { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
 button { font: 500 15px "Kanit", sans-serif; border: 0; border-radius: 5px; padding: 12px 22px; cursor: pointer;
   background: var(--navy); color: var(--on-navy); white-space: nowrap; }
@@ -103,16 +107,16 @@ details summary { cursor: pointer; color: var(--muted); }
         <label class="lb" for="endBl">ถึง B/L</label>
         <input type="text" id="endBl" maxlength="38" placeholder="ว่าง = ถึงบรรทัดสุดท้าย" autocomplete="off" spellcheck="false">
       </div>
-      <div class="fld">
-        <label class="lb" for="keepBl">หรือ เก็บเฉพาะ B/L</label>
-        <input type="text" id="keepBl" placeholder="HASL…, HASL… (คั่นด้วย ,)" autocomplete="off" spellcheck="false">
-      </div>
       <div class="btns">
         <button id="run" disabled>ตัด B/L</button>
         <button id="clear" class="ghost" type="button">ลบไฟล์</button>
       </div>
+      <div class="fld wide">
+        <label class="lb" for="keepBl">หรือ เก็บเฉพาะ B/L</label>
+        <textarea id="keepBl" rows="2" placeholder="HASLJ01260800588, HASLK02261000346  (คั่นด้วย , หรือขึ้นบรรทัดใหม่)" autocomplete="off" spellcheck="false"></textarea>
+      </div>
     </div>
-    <p class="note"><b>แบบที่ 1 ตัดช่วง</b>: ลบตั้งแต่บรรทัด H02 ของ B/L เริ่มตัด จนถึงบรรทัดสุดท้าย (H03 … H10) ของ B/L สุดท้าย (รวม sub-B/L …A, …B) ออก เหลือเฉพาะส่วนที่ไม่ได้ตัด · เว้นว่างช่องเริ่มตัด = ตั้งแต่ H02 แรก · เว้นว่างช่องถึง = ถึงบรรทัดสุดท้าย · <b>แบบที่ 2 เก็บเฉพาะ B/L</b>: ใส่ B/L ที่ต้องการเก็บ 1 ตัวหรือหลายตัว คั่นด้วย , (เช่น HASLJ01260800588,HASLK02261000346) รวม sub-B/L ของแต่ละตัว B/L อื่นตัดทิ้งทั้งหมด · ใช้ได้ทีละแบบ · เว้นว่างทุกช่อง = ไม่ตัด · <b>ทุก B/L ที่เหลือ</b>: H05 = ชื่อเดียวกับ H06 เว้นวรรค 1 เคาะเท่านั้น (H06 คงเดิม) ยกเว้น B/L TRANSIT / TRANSHIPMENT (รวม INTRANSIT) ห้ามแก้ H05 / H06 · H07 หน่วยหีบห่อ PG → PX · บรรทัดหัวไฟล์ HOU / H01 เก็บไว้เสมอ (ไม่มีแล้วโปรแกรม ECS ขึ้น invalid MMAN Text File) · พิมพ์ HASLC… หรือ H02HASLC… ก็ได้ · ชื่อไฟล์ที่ได้ = ชื่อไฟล์ต้นฉบับก่อน "__" ตามด้วย _PORTAL เช่น KMGY_2608S_PORTAL.txt · ประมวลผลในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์</p>
+    <p class="note"><b>แบบที่ 1 ตัดช่วง</b>: ลบตั้งแต่บรรทัด H02 ของ B/L เริ่มตัด จนถึงบรรทัดสุดท้าย (H03 … H10) ของ B/L สุดท้าย (รวม sub-B/L …A, …B) ออก เหลือเฉพาะส่วนที่ไม่ได้ตัด · เว้นว่างช่องเริ่มตัด = ตั้งแต่ H02 แรก · เว้นว่างช่องถึง = ถึงบรรทัดสุดท้าย · <b>แบบที่ 2 เก็บเฉพาะ B/L</b>: ใส่ B/L ที่ต้องการเก็บ 1 ตัวหรือหลายตัว คั่นด้วย , หรือขึ้นบรรทัดใหม่ (เช่น HASLJ01260800588,HASLK02261000346) รวม sub-B/L ของแต่ละตัว B/L อื่นตัดทิ้งทั้งหมด · ใช้ได้ทีละแบบ · เว้นว่างทุกช่อง = ไม่ตัด · <b>ทุก B/L ที่เหลือ</b>: H05 = ชื่อเดียวกับ H06 เว้นวรรค 1 เคาะเท่านั้น (H06 คงเดิม) ยกเว้น B/L TRANSIT / TRANSHIPMENT (รวม INTRANSIT) ห้ามแก้ H05 / H06 · H07 หน่วยหีบห่อ PG → PX · บรรทัดหัวไฟล์ HOU / H01 เก็บไว้เสมอ (ไม่มีแล้วโปรแกรม ECS ขึ้น invalid MMAN Text File) · พิมพ์ HASLC… หรือ H02HASLC… ก็ได้ · ชื่อไฟล์ที่ได้ = ชื่อไฟล์ต้นฉบับก่อน "__" ตามด้วย _PORTAL เช่น KMGY_2608S_PORTAL.txt · ประมวลผลในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์</p>
   </div>
 
   <div class="card hidden" id="result">
@@ -230,7 +234,7 @@ const clean = id => norm($(id).value);
 
 function run() {
   const from = clean("startBl"), to = clean("endBl");
-  const keys = $("keepBl").value.split(",").map(norm).filter(Boolean);
+  const keys = $("keepBl").value.split(/[,\s]+/).map(norm).filter(Boolean);
   $("result").classList.remove("hidden");
   let r;
   try {
